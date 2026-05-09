@@ -1,7 +1,7 @@
 Invoke-Command -ScriptBlock {
     Clear-Host
     Write-Host "=====================================" -ForegroundColor Cyan
-    Write-Host "   RADIANT - Ghostx STORE DLL Injector   " -ForegroundColor Cyan
+    Write-Host "   RANKONE - ENDLESS STORE DLL Injector   " -ForegroundColor Cyan
     Write-Host "=====================================" -ForegroundColor Cyan
     Write-Host ""
     
